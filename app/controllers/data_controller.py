@@ -1,12 +1,26 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from app.services.parquet_service import ParquetService
 from typing import Optional
+from app.auth.firebase_auth import get_user_token, UserCredentials, Token, verify_jwt_token
+from firebase_admin import auth
 
 router = APIRouter()
 parquet_service = ParquetService(data_dir="data")
 
+ 
+@router.post("/get_token")
+async def get_token(user_credentials: UserCredentials):
+    token = get_user_token(user_credentials)
+    return {"token": token}
+
+@router.post("/verify_token")
+async def verify_token(token: Token):
+    verification = verify_jwt_token(token.payload)
+    return {"token": verification}
+
+
 @router.get("/data/{filename}")
-async def get_data(filename: str, query: str = Query(None)):
+async def get_data(filename: str, query: str = Query(None), token: dict = Depends(verify_jwt_token)):
     """
     Router get data for handling queries to a certain Parquet file.
 
@@ -28,7 +42,8 @@ async def query_data(
     end_date: str,
     key_type: str,
     key_value: Optional[str] = None,
-    cummulative: Optional[bool] = False
+    cummulative: Optional[bool] = False,
+    token: dict = Depends(verify_jwt_token)
 ):
     """
     Router to query data based on Keys (KeyStore, KeyEmployee, KeyProduct).

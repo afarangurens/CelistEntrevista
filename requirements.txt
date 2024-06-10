@@ -3,3 +3,4 @@ uvicorn
 pandas
 pyarrow
 python-dotenv
+firebase-admin
