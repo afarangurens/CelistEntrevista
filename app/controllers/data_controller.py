@@ -13,11 +13,12 @@ async def get_token(user_credentials: UserCredentials):
     token = get_user_token(user_credentials)
     return {"token": token}
 
+"""
 @router.post("/verify_token")
 async def verify_token(token: Token):
     verification = verify_jwt_token(token.payload)
     return {"token": verification}
-
+"""
 
 @router.get("/data/{filename}")
 async def get_data(filename: str, query: str = Query(None), token: dict = Depends(verify_jwt_token)):
