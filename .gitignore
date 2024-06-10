@@ -1,0 +1,7 @@
+# Ignorar en git carpeta data/
+data/
+# Ignorar carpeta -venv/
+.venv/
+
+__pycache__/
+*.py[cod]
