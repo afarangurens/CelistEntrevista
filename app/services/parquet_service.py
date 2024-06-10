@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from fastapi import HTTPException
 
 class ParquetService:
     """
@@ -52,3 +53,43 @@ class ParquetService:
         return df
 
 
+    def query_data(self, filename: str, start_date: str, end_date: str, key_type:str, key_value: str = None) -> list[dict]:
+        """
+        Query data based on date range and KeyEmployee.
+
+        :param filename: Name of the Parquet file.
+        :param start_date: Start date for the query in the format 'YYYY-MM-DD'.
+        :param end_date: End date for the query in the format 'YYYY-MM-DD'.
+        :param key_type: Type of key to filter by (KeyEmployee, KeyProduct, or KeyStore).
+        :param key_value: Key to filter by.
+        :return: Filtered list of dictionaries.
+        """
+        file_path = os.path.join(self.data_dir, filename)
+
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(
+                f"File {filename} not found in {self.data_dir}"
+            )
+
+        try:
+            df = pd.read_parquet(file_path, columns=['KeyDate', key_type, 'Qty', 'Amount'])
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"{key_type} not found in the Parquet files.")
+        
+        start_date = pd.to_datetime(start_date, format='%Y-%m-%d')
+        end_date = pd.to_datetime(end_date, format='%Y-%m-%d')
+
+        df['KeyDate'] = pd.to_datetime(df['KeyDate'], format='%m/%d/%Y %I:%M %p')
+        df_filtered = df[(df['KeyDate'] >= start_date) & (df['KeyDate'] <= end_date)]
+
+        if key_value:
+            df_filtered = df_filtered[df_filtered[key_type] == key_value]
+            df_grouped = df_filtered.groupby(key_type).agg({'Qty': 'sum', 'Amount': 'sum'}).reset_index()
+        else:
+            df_grouped = df_filtered.groupby(key_type).agg({'Qty': 'sum', 'Amount': 'sum'}).reset_index()
+
+
+        return df_grouped.to_dict(orient="records")
+    
+
+        
