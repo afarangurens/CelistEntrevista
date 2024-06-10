@@ -27,15 +27,30 @@ async def query_data(
     start_date: str,
     end_date: str,
     key_type: str,
-    key_value: Optional[str] = None
+    key_value: Optional[str] = None,
+    cummulative: Optional[bool] = False
 ):
+    """
+    Router to query data based on Keys (KeyStore, KeyEmployee, KeyProduct).
+
+    :param filename: Name of the Parquet file to query.
+    :param start_date: Start date for the query in the format 'YYYY-MM-DD'.
+    :param end_date: End date for the query in the format 'YYYY-MM-DD'.
+    :param key_type: Type of key to filter by (KeyStore, KeyEmployee, or KeyProduct).
+    :param key_value: Optional. Value of the key to filter by.
+    :param cummulative: Optional. If True, returns cumulative values for each individual key (Qty, Amount, AvgAmount).
+                        Defaults to False, which returns individual sales data.
+    :return: Dict containing the queried data.
+    :raises HTTPException 404: If the specified Parquet file is not found.
+    """
     try:
-        data = parquet_service.query_data(
+        data = parquet_service.query_data_by_total_and_avg(
             filename=filename,
             start_date=start_date,
             end_date=end_date,
             key_type=key_type,
-            key_value=key_value
+            key_value=key_value,
+            cummulative=cummulative
         )
         return {"data": data}
     except FileNotFoundError as e:

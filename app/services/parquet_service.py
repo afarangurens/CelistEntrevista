@@ -53,7 +53,14 @@ class ParquetService:
         return df
 
 
-    def query_data(self, filename: str, start_date: str, end_date: str, key_type:str, key_value: str = None) -> list[dict]:
+    def query_data_by_total_and_avg(
+            self, 
+            filename: str, 
+            start_date: str, 
+            end_date: str, 
+            key_type: str, 
+            key_value: str = None,
+            cummulative: bool = False) -> list[dict]:
         """
         Query data based on date range and KeyEmployee.
 
@@ -76,7 +83,7 @@ class ParquetService:
         start_date = self._date_to_str(start_date)
         end_date = self._date_to_str(end_date)
 
-        filtered_df = self._filter_df(loaded_df, start_date, end_date, key_type, key_value)
+        filtered_df = self._filter_df(loaded_df, start_date, end_date, key_type, key_value, cummulative)
 
         return filtered_df
     
@@ -105,7 +112,14 @@ class ParquetService:
         """
         return pd.to_datetime(date, format='%Y-%m-%d')
     
-    def _filter_df(self, df: pd.DataFrame, start_date: pd.Timestamp, end_date: pd.Timestamp, key_type: str, key_value: str = None) -> list[dict]:
+    def _filter_df(
+            self, 
+            df: pd.DataFrame,
+            start_date: pd.Timestamp, 
+            end_date: pd.Timestamp, 
+            key_type: str, 
+            key_value: str = None,
+            cummulative: bool = False) -> list[dict]:
         """
         Filter DataFrame based on date range and optionally by key value, then aggregate the results.
 
@@ -132,9 +146,12 @@ class ParquetService:
 
         if key_value:
             df_filtered = df_filtered[df_filtered[key_type] == key_value]
+        
+        if cummulative:
+            df_filtered['AvgAmount'] = df_filtered['Amount'] / df_filtered['Qty']
 
-        df_filtered['AvgAmount'] = df_filtered['Amount'] / df_filtered['Qty']
+            df_grouped = df_filtered.groupby(key_type).agg({'Qty': 'sum', 'Amount': 'sum', 'AvgAmount': 'mean'}).reset_index()
 
-        df_grouped = df_filtered.groupby(key_type).agg({'Qty': 'sum', 'Amount': 'sum', 'AvgAmount': 'mean'}).reset_index()
+            return df_grouped.to_dict(orient="records")
 
-        return df_grouped.to_dict(orient="records")
+        return df_filtered.to_dict(orient="records")
