@@ -6,7 +6,7 @@ import json
 import requests
 from firebase_admin import auth, credentials, initialize_app
 
-credential = credentials.Certificate('serviceAccountKey.json')
+credential = credentials.Certificate('c:\Users\USUARIO\Downloads\serviceAccount.json')
 initialize_app(credential)
 
 class UserCredentials(BaseModel):
